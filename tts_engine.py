@@ -4,11 +4,13 @@ import base64
 import torch
 from f5_tts.api import F5TTS
 
-VOICE_DIR = "data/voices"
-OUTPUT_DIR = "data/outputs"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DEFAULT_REF_FILE = "demo_speaker0.mp3"
+VOICE_DIR = os.path.join(BASE_DIR, "data", "voices")
+OUTPUT_DIR = os.path.join(BASE_DIR, "data", "outputs")
+DEFAULT_REF_FILE = os.path.join(BASE_DIR, "demo_speaker0.mp3")
 
+os.makedirs(VOICE_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
