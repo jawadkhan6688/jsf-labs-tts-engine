@@ -6,7 +6,7 @@ from tts_engine import synthesize
 logging.basicConfig(level=logging.INFO)
 
 MAX_TEXT_LENGTH = 2000
-MAX_BASE64_SIZE = 15_000_000  # ~15MB safety
+MAX_BASE64_SIZE = 15_000_000
 
 
 def response(status: int, message: str = None, data=None):
@@ -34,7 +34,7 @@ def handler(job):
         else:
             return response(400, "Invalid action")
 
-    except Exception as e:
+    except Exception:
         logging.exception("Unhandled server error")
         return response(500, "Internal server error")
 
@@ -60,4 +60,26 @@ def handle_upload(job_input):
 
 
 def handle_synthesize(job_input):
-    voice_id = job_input.get("voice_id")
+    text = job_input.get("text")
+    voice_id = job_input.get("voice_id")  # optional
+    speed = job_input.get("speed", 1.0)
+
+    if not text:
+        return response(400, "text required")
+
+    if len(text) > MAX_TEXT_LENGTH:
+        return response(400, f"Text too long. Max {MAX_TEXT_LENGTH} characters")
+
+    try:
+        audio_base64 = synthesize(
+            voice_id=voice_id,  # may be None
+            text=text,
+            speed=speed
+        )
+        return response(200, "Success", {"audio": audio_base64})
+    except Exception:
+        logging.exception("Synthesis failed")
+        return response(500, "Synthesis failed")
+
+
+runpod.serverless.start({"handler": handler})

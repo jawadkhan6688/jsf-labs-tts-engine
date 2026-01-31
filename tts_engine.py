@@ -7,11 +7,12 @@ from f5_tts.api import F5TTS
 VOICE_DIR = "data/voices"
 OUTPUT_DIR = "data/outputs"
 
+DEFAULT_REF_FILE = "demo_speaker0.mp3"
+
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-# Load model ONCE (critical for serverless)
 model = F5TTS(
     model="F5TTS_v1_Base",
     device=device,
@@ -22,19 +23,30 @@ model = F5TTS(
 
 def synthesize(voice_id: str, text: str, speed: float) -> str:
 
-    ref_path = os.path.join(VOICE_DIR, f"{voice_id}.wav")
+    # --------------------------
+    # Choose reference file
+    # --------------------------
+    if voice_id:
+        ref_path = os.path.join(VOICE_DIR, f"{voice_id}.wav")
 
-    if not os.path.exists(ref_path):
-        raise FileNotFoundError("Voice not found")
+        if not os.path.exists(ref_path):
+            raise FileNotFoundError("Voice not found")
+    else:
+        # Use default file
+        ref_path = DEFAULT_REF_FILE
 
-    # Clamp speed safely
+        if not os.path.exists(ref_path):
+            raise FileNotFoundError("Default reference file missing")
+
+    # Clamp speed
     speed = max(0.8, min(1.3, float(speed)))
 
     output_path = os.path.join(
         OUTPUT_DIR,
-        f"{voice_id}_{uuid.uuid4()}.wav"
+        f"output_{uuid.uuid4()}.wav"
     )
 
+    # Transcribe reference
     ref_text = model.transcribe(ref_path)
 
     try:
